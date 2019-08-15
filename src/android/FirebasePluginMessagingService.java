@@ -21,6 +21,7 @@ import com.crashlytics.android.Crashlytics;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -400,8 +401,8 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             notificationChannel.setDescription("RED By Dufry");
             notificationChannel.enableLights(true);
             notificationChannel.setLightColor(Color.RED);
-            notificationChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
             notificationChannel.enableVibration(true);
+            notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
             notificationManager.createNotificationChannel(notificationChannel);
         }
 
@@ -411,15 +412,31 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             .setSmallIcon(getApplicationInfo().icon)
             .setContentTitle(title)
             .setContentText(body)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent);
 
         if (notificationBuilder != null) {
             notificationManager.notify(id, notificationBuilder.build());
+
+            // Send "received" event to Adobe Campaign
+            HashMap<String, Object> contextData = new HashMap<String, Object>();
+
+            String deliveryId = dataMap.get("_dId");
+            String broadlogId = dataMap.get("_mId");
+
+            if ((deliveryId != null) && (broadlogId != null)) {
+                contextData.put("deliveryId", deliveryId);
+                contextData.put("broadlogId", broadlogId);
+                contextData.put("action", "1");
+                //We will not track adobe from here
+                //Analytics.trackAction("tracking", contextData);
+            }
         } else {
             Log.d(TAG, "Error in notification builder");
         }
     }
+
 
     /* END: Dufry custom */
 }
