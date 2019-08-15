@@ -122,8 +122,8 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 if(data.containsKey("notification_foreground")){
                     foregroundNotification = true;
                 }
-                if(data.containsKey("notification_title")) title = data.get("notification_title");
-                if(data.containsKey("notification_body")) body = data.get("notification_body");
+                if(data.containsKey("title")) title = data.get("title");
+                if(data.containsKey("body")) body = data.get("body");
                 if(data.containsKey("notification_android_channel_id")) channelId = data.get("notification_android_channel_id");
                 if(data.containsKey("notification_android_id")) id = data.get("notification_android_id");
                 if(data.containsKey("notification_android_sound")) sound = data.get("notification_android_sound");
