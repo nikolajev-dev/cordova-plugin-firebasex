@@ -122,8 +122,13 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 if(data.containsKey("notification_foreground")){
                     foregroundNotification = true;
                 }
+                /* START: Dufry custom */
+                //if(data.containsKey("notification_title")) title = data.get("notification_title");
+                //if(data.containsKey("notification_body")) body = data.get("notification_body");
                 if(data.containsKey("title")) title = data.get("title");
                 if(data.containsKey("body")) body = data.get("body");
+                /* END: Dufry custom */
+
                 if(data.containsKey("notification_android_channel_id")) channelId = data.get("notification_android_channel_id");
                 if(data.containsKey("notification_android_id")) id = data.get("notification_android_id");
                 if(data.containsKey("notification_android_sound")) sound = data.get("notification_android_sound");
@@ -158,6 +163,9 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             if (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title) || (data != null && !data.isEmpty())) {
                 boolean showNotification = (FirebasePlugin.inBackground() || !FirebasePlugin.hasNotificationsCallback() || foregroundNotification) && (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title));
                 sendMessage(remoteMessage, data, messageType, id, title, body, showNotification, sound, vibrate, light, color, icon, channelId, priority, visibility);
+                /* START: Dufry custom */
+                displayNotification(remoteMessage);
+                /* END: Dufry custom */
             }
         }catch (Exception e){
             FirebasePlugin.handleExceptionWithoutContext(e);
@@ -342,4 +350,72 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             b.putString(k, v);
         }
     }
+
+
+
+    /* START: Dufry custom */
+
+    /**
+     * Called to handle a data notification received from Adobe Campaign
+     *
+     * @param remoteMessage Object representing the message received from Firebase Cloud Messaging.
+     */
+    private void displayNotification(RemoteMessage remoteMessage) {
+        // Read notification info
+        Map<String, String> dataMap = remoteMessage.getData();
+
+        if ((dataMap == null) || (dataMap.size() == 0)) {
+            return;
+        }
+
+        String title = dataMap.get("title");
+        String body = dataMap.get("body");
+
+        int id = 0;
+        String collapseKey = remoteMessage.getCollapseKey();
+        if ((collapseKey != null) && !collapseKey.isEmpty()) {
+            id = Integer.valueOf(collapseKey);
+        }
+
+        // Create intent
+        Intent intent = new Intent(this, OnNotificationOpenReceiver.class);
+        for (String key : dataMap.keySet()) {
+            intent.putExtra(key, dataMap.get(key));
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT);
+
+        // Create notification channel (required for Android O above)
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        String NOTIFICATION_CHANNEL_ID = "red_channel_id_01";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "RED By Dufry", NotificationManager.IMPORTANCE_DEFAULT);
+
+            // Configure the notification channel.
+            notificationChannel.setDescription("RED By Dufry");
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            notificationChannel.setVibrationPattern(new long[]{0, 1000, 500, 1000});
+            notificationChannel.enableVibration(true);
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
+
+        // Display notification
+        NotificationCompat.Builder notificationBuilder = null;
+        notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(getApplicationInfo().icon)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent);
+
+        if (notificationBuilder != null) {
+            notificationManager.notify(id, notificationBuilder.build());
+        } else {
+            Log.d(TAG, "Error in notification builder");
+        }
+    }
+
+    /* END: Dufry custom */
 }
