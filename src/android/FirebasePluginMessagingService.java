@@ -169,7 +169,7 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
                 boolean showNotification = (FirebasePlugin.inBackground() || !FirebasePlugin.hasNotificationsCallback() || foregroundNotification) && (!TextUtils.isEmpty(body) || !TextUtils.isEmpty(title));
                 sendMessage(remoteMessage, data, messageType, id, title, body, showNotification, sound, vibrate, light, color, icon, channelId, priority, visibility);
                 /* START: Dufry custom */
-                displayNotification(remoteMessage);
+                // displayNotification(remoteMessage);
                 /* END: Dufry custom */
             }
         }catch (Exception e){
@@ -209,6 +209,9 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             // Channel
             if(channelId == null || FirebasePlugin.channelExists(channelId)){
                 channelId = FirebasePlugin.defaultChannelId;
+            }
+            if(channelId == null){
+                channelId = "fcm_default_channel";
             }
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
                 Log.d(TAG, "Channel ID: "+channelId);
